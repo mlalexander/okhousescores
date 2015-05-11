@@ -1,56 +1,57 @@
-from sunlight import openstates
 import csv
-import re
+from sunlight import openstates
 
-oklahoma_lower_bills = openstates.bills(
-    state='ok',
-    search_window='term:2015-2016',
-)
-
-#retrieves legislators in the house,
 ok_legislators = openstates.legislators(
     state='ok',
-    chamber='lower',
-    active='true'
+    active='true',
+    chamber='lower'
 )
 
-ok_legislators_array = ['bill_id', 'chamber', 'vote_id']
+ok_legislators_csv_key = ['leg_id']
+ok_legislators_array = []
 for legislator in ok_legislators:
+    ok_legislators_csv_key.append(legislator['leg_id'])
     ok_legislators_array.append(legislator['leg_id'])
 
-with open('housevotes.csv', 'w') as f:
-    writer = csv.DictWriter(f, fieldnames=ok_legislators_array, extrasaction='ignore')
-
+with open('housescores.csv', 'w') as w:
+    writer = csv.DictWriter(w, fieldnames=ok_legislators_csv_key, extrasaction='ignore')
     writer.writeheader()
 
-    for bill in oklahoma_lower_bills:
-        oklahoma_bill_details = openstates.bill_detail(
-            state='ok',
-            session='2015-2016',
-            bill_id=bill['bill_id']
-        )
+    for legislatorA in ok_legislators_array:
+        print "Going through " + legislatorA
 
-        for bill_votes in oklahoma_bill_details['votes']:
+        leg_scores = {}
+        leg_scores['leg_id'] = legislatorA
 
-            pattern = re.compile('third', re.IGNORECASE)
+        for legislatorB in ok_legislators_array:
 
-            if pattern.search(bill_votes['motion']):
+            with open('housevotes.csv') as f:
+                reader = csv.DictReader(f)
 
-                total_votes = {}
+                voteCount = 0
+                voteSame = 0
+                notComparable = 0
 
-                total_votes['bill_id'] = bill_votes['bill_id']
-                total_votes['vote_id'] = bill_votes['vote_id']
-                total_votes['chamber'] = bill_votes['chamber']
+                for bill in reader:
 
+                    if not bill[legislatorA] or not bill[legislatorB]:
 
-                for yes_votes in bill_votes['yes_votes']:
-                    total_votes[yes_votes['leg_id']] = 1
+                        notComparable += 1
 
-                for no_votes in bill_votes['no_votes']:
-                    total_votes[no_votes['leg_id']] = 2
+                    elif bill[legislatorA] == bill[legislatorB]:
+
+                        voteCount += 1
+                        voteSame += 1
+
+                    else:
+
+                        voteCount += 1
 
                 try:
-                    writer.writerow(total_votes)
+                    score = float(voteSame) / voteCount
+                    leg_scores[legislatorB] = score
 
-                except ValueError:
-                    print "error"
+                except ZeroDivisionError:
+                    leg_scores[legislatorB] = "x"
+
+        writer.writerow(leg_scores)

@@ -3,7 +3,8 @@ from sunlight import openstates
 
 ok_legislators = openstates.legislators(
     state='ok',
-    active='true'
+    active='true',
+    chamber='lower'
 )
 
 ok_legislators_csv_key = ['leg_id']
@@ -12,37 +13,46 @@ for legislator in ok_legislators:
     ok_legislators_csv_key.append(legislator['leg_id'])
     ok_legislators_array.append(legislator['leg_id'])
 
-with open('housescores.csv', 'w') as w:
+with open('scores.csv', 'w') as w:
     writer = csv.DictWriter(w, fieldnames=ok_legislators_csv_key, extrasaction='ignore')
     writer.writeheader()
 
     for legislatorA in ok_legislators_array:
-        
+        print "Going through " + legislatorA
+
         leg_scores = {}
         leg_scores['leg_id'] = legislatorA
 
         for legislatorB in ok_legislators_array:
 
+            # open the votes csv file
             with open('housevotes.csv') as f:
                 reader = csv.DictReader(f)
 
-                voteTotal = 0
-                match = 0
-                noMatch = 0
+                voteCount = 0
+                voteSame = 0
+                notComparable = 0
 
                 for bill in reader:
 
                     if not bill[legislatorA] or not bill[legislatorB]:
 
-                        noMatch += 1
+                        notComparable += 1
 
                     elif bill[legislatorA] == bill[legislatorB]:
 
-                        voteTotal += 1
-                        match += 1
+                        voteCount += 1
+                        voteSame += 1
 
                     else:
 
-                        voteTotal += 1
+                        voteCount += 1
+
+                try:
+                    score = float(voteSame) / voteCount
+                    leg_scores[legislatorB] = score
+
+                except ZeroDivisionError:
+                    leg_scores[legislatorB] = "x"
 
         writer.writerow(leg_scores)
