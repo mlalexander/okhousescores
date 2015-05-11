@@ -3,8 +3,7 @@ from sunlight import openstates
 
 ok_legislators = openstates.legislators(
     state='ok',
-    active='true',
-    chamber='lower'
+    active='true'
 )
 
 ok_legislators_csv_key = ['leg_id']
@@ -18,7 +17,6 @@ with open('housescores.csv', 'w') as w:
     writer.writeheader()
 
     for legislatorA in ok_legislators_array:
-        print "Going through " + legislatorA
 
         leg_scores = {}
         leg_scores['leg_id'] = legislatorA
@@ -28,30 +26,23 @@ with open('housescores.csv', 'w') as w:
             with open('housevotes.csv') as f:
                 reader = csv.DictReader(f)
 
-                voteCount = 0
-                voteSame = 0
-                notComparable = 0
+                voteTotal = 0
+                match = 0
+                noMatch = 0
 
                 for bill in reader:
 
                     if not bill[legislatorA] or not bill[legislatorB]:
 
-                        notComparable += 1
+                        noMatch += 1
 
                     elif bill[legislatorA] == bill[legislatorB]:
 
-                        voteCount += 1
-                        voteSame += 1
+                        voteTotal += 1
+                        match += 1
 
                     else:
 
-                        voteCount += 1
-
-                try:
-                    score = float(voteSame) / voteCount
-                    leg_scores[legislatorB] = score
-
-                except ZeroDivisionError:
-                    leg_scores[legislatorB] = "x"
+                        voteTotal += 1
 
         writer.writerow(leg_scores)
