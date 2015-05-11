@@ -1,48 +1,55 @@
-import csv
 from sunlight import openstates
+import csv
+import re
+
+oklahoma_lower_bills = openstates.bills(
+    state='ok',
+    search_window='term:2015-2016'
+)
 
 ok_legislators = openstates.legislators(
     state='ok',
-    active='true'
+    active='true',
+    chamber='lower'
 )
 
-ok_legislators_csv_key = ['leg_id']
-ok_legislators_array = []
+ok_legislators_array = ['bill_id', 'chamber', 'vote_id']
 for legislator in ok_legislators:
-    ok_legislators_csv_key.append(legislator['leg_id'])
     ok_legislators_array.append(legislator['leg_id'])
 
-with open('housescores.csv', 'w') as w:
-    writer = csv.DictWriter(w, fieldnames=ok_legislators_csv_key, extrasaction='ignore')
+with open('votes.csv', 'w') as f:
+    writer = csv.DictWriter(f, fieldnames=ok_legislators_array, extrasaction='ignore')
+
     writer.writeheader()
 
-    for legislatorA in ok_legislators_array:
+    for bill in oklahoma_lower_bills:
 
-        leg_scores = {}
-        leg_scores['leg_id'] = legislatorA
+        oklahoma_bill_details = openstates.bill_detail(
+            state='ok',
+            session='2015-2016',
+            bill_id=bill['bill_id']
+        )
 
-        for legislatorB in ok_legislators_array:
+        for bill_votes in oklahoma_bill_details['votes']:
 
-            with open('housevotes.csv') as f:
-                reader = csv.DictReader(f)
+            pattern = re.compile('third', re.IGNORECASE)
 
-                voteTotal = 0
-                match = 0
-                noMatch = 0
+            if pattern.search(bill_votes['motion']):
 
-                for bill in reader:
+                total_votes = {}
 
-                    if not bill[legislatorA] or not bill[legislatorB]:
+                total_votes['bill_id'] = bill_votes['bill_id']
+                total_votes['vote_id'] = bill_votes['vote_id']
+                total_votes['chamber'] = bill_votes['chamber']
 
-                        noMatch += 1
+                for yes_votes in bill_votes['yes_votes']:
+                    total_votes[yes_votes['leg_id']] = 1
 
-                    elif bill[legislatorA] == bill[legislatorB]:
+                for no_votes in bill_votes['no_votes']:
+                    total_votes[no_votes['leg_id']] = 2
 
-                        voteTotal += 1
-                        match += 1
+                try:
+                    writer.writerow(total_votes)
 
-                    else:
-
-                        voteTotal += 1
-
-        writer.writerow(leg_scores)
+                except ValueError:
+                    print "Something is off in writing your csv."
