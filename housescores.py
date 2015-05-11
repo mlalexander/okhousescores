@@ -49,7 +49,7 @@ with open('scores.csv', 'w') as w:
                         voteCount += 1
 
                 try:
-                    score = float(voteSame) / voteCount
+                    score = voteSame
                     leg_scores[legislatorB] = score
 
                 except ZeroDivisionError:
