@@ -4,7 +4,7 @@ import re
 
 oklahoma_lower_bills = openstates.bills(
     state='ok',
-    search_window='term:2015-2016'
+    search_window='term:2015-2016',
 )
 
 #retrieves legislators in the house,
@@ -23,7 +23,6 @@ with open('housevotes.csv', 'w') as f:
 
     writer.writeheader()
 
-#need to add something to filter out bill actions that occur in the opposite chamber, but can't figure that out
     for bill in oklahoma_lower_bills:
         oklahoma_bill_details = openstates.bill_detail(
             state='ok',
@@ -33,7 +32,7 @@ with open('housevotes.csv', 'w') as f:
 
         for bill_votes in oklahoma_bill_details['votes']:
 
-            pattern = re.compile('third reading', re.IGNORECASE)
+            pattern = re.compile('third', re.IGNORECASE)
 
             if pattern.search(bill_votes['motion']):
 
